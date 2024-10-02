@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         # https://ftp.netbsd.org/pub/NetBSD/
-        target-version: ['9.1', '9.2', '9.3', '9.4', '10.0']
+        target-version: ['9.2', '9.3', '9.4', '10.0']
 
     steps:
       - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
@@ -29,7 +29,6 @@ jobs:
 
 
   openbsd-amd64:
-    needs: netbsd-amd64
 
     runs-on: ubuntu-latest
 
@@ -53,7 +52,6 @@ jobs:
           path: bsdtar-*-openbsd-${{ matrix.target-version }}-amd64.tar.xz
 
   freebsd-amd64:
-    needs: openbsd-amd64
 
     runs-on: ubuntu-latest
 
@@ -78,7 +76,6 @@ jobs:
 
 
   macos:
-    needs: freebsd-amd64
 
     runs-on: macos-12
 
@@ -103,7 +100,6 @@ jobs:
 
 
   linux-x86_64:
-    needs: macos
 
     runs-on: ubuntu-latest
 
@@ -127,7 +123,6 @@ jobs:
 
 
   linux-aarch64:
-    needs: linux-x86_64
 
     runs-on: ubuntu-latest
 
@@ -177,7 +172,6 @@ jobs:
 
 
   linux-ppc64le:
-    needs: linux-aarch64
 
     runs-on: ubuntu-latest
 
@@ -227,7 +221,6 @@ jobs:
 
 
   linux-riscv64:
-    needs: linux-ppc64le
 
     runs-on: ubuntu-latest
 
@@ -278,7 +271,6 @@ jobs:
 
 
   linux-s390x:
-    needs: linux-riscv64
 
     runs-on: ubuntu-latest
 
@@ -328,7 +320,7 @@ jobs:
 
 
   publish:
-    needs: linux-s390x
+    needs: [freebsd-amd64, openbsd-amd64, netbsd-amd64, macos, linux-x86_64, linux-aarch64, linux-ppc64le, linux-riscv64, linux-s390x]
 
     runs-on: ubuntu-latest
 
