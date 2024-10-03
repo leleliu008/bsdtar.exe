@@ -59,7 +59,7 @@ jobs:
       fail-fast: false
       matrix:
         # https://archive.freebsd.org/old-releases/amd64/
-        target-version: ['13.0', '13.1', '13.2', '13.3', '14.0']
+        target-version: ['13.0', '13.1', '13.2', '13.3', '14.0', '14.1']
 
     steps:
       - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
