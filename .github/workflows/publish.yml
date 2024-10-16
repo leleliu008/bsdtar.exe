@@ -99,30 +99,12 @@ jobs:
           path: bsdtar-*-macos*.tar.xz
 
 
-  linux-x86_64:
+  linux:
 
-    runs-on: ubuntu-latest
-
-    container: alpine:3.19
-
-    steps:
-      - run: apk update
-      - run: apk add wget g++ libc-dev linux-headers
-
-      - run: wget https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-      - run: chmod a+x ppkg
-      - run: ./ppkg setup
-      - run: ./ppkg update
-      - run: ./ppkg install bsdtar --static
-      - run: ./ppkg pack    bsdtar
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bsdtar---linux-x86_64-tar-xz
-          path: bsdtar-*-linux-x86_64.tar.xz
-
-
-  linux-aarch64:
+    strategy:
+      fail-fast: false
+      matrix:
+        target-arch: [x86_64, aarch64, ppc64le, riscv64, s390x]
 
     runs-on: ubuntu-latest
 
@@ -160,163 +142,30 @@ jobs:
           chmod +x run.sh
 
       # https://github.com/multiarch/qemu-user-static
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-      - run: docker run -v $PWD:$PWD -w $PWD --name alpine arm64v8/alpine sh run.sh
+      - if: matrix.target-arch != 'x86_64'
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - if: matrix.target-arch == 'x86_64'
+        run: docker run -v $PWD:/root -w /root --name alpine         alpine sh run.sh
+
+      - if: matrix.target-arch == 'aarch64'
+        run: docker run -v $PWD:/root -w /root --name alpine arm64v8/alpine sh run.sh
+
+      - if: matrix.target-arch == 'ppc64le'
+        run: docker run -v $PWD:/root -w /root --name alpine ppc64le/alpine sh run.sh
+
+      - if: matrix.target-arch == 'riscv64'
+        run: docker run -v $PWD:/root -w /root --name alpine riscv64/alpine sh run.sh
+
+      - if: matrix.target-arch == 's390x'
+        run: docker run -v $PWD:/root -w /root --name alpine   s390x/alpine sh run.sh
 
       - run: ls
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---linux-aarch64-tar-xz
-          path: bsdtar-*-linux-aarch64.tar.xz
-
-
-  linux-ppc64le:
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - run: |
-          cat > run.sh <<EOF
-          set -e
-
-          COLOR_GREEN='\033[0;32m'        # Green
-          COLOR_PURPLE='\033[0;35m'       # Purple
-          COLOR_OFF='\033[0m'             # Reset
-
-          echo() {
-              printf '%b\n' "\$*"
-          }
-
-          run() {
-              echo "\${COLOR_PURPLE}==>\${COLOR_OFF} \${COLOR_GREEN}\$@\${COLOR_OFF}"
-              eval "\$*"
-          }
-
-          run uname -a
-
-          run apk update
-          run apk add wget g++ libc-dev linux-headers
-
-          run wget https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-          run chmod a+x ppkg
-          run ./ppkg setup
-          run ./ppkg update
-          run ./ppkg install bsdtar --static
-          run ./ppkg pack    bsdtar
-          EOF
-
-          chmod +x run.sh
-
-      # https://github.com/multiarch/qemu-user-static
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-      - run: docker run -v $PWD:$PWD -w $PWD --name alpine ppc64le/alpine sh run.sh
-
-      - run: ls
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bsdtar---linux-ppc64le-tar-xz
-          path: bsdtar-*-linux-ppc64le.tar.xz
-
-
-  linux-riscv64:
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - run: |
-          cat > run.sh <<EOF
-          set -e
-
-          COLOR_GREEN='\033[0;32m'        # Green
-          COLOR_PURPLE='\033[0;35m'       # Purple
-          COLOR_OFF='\033[0m'             # Reset
-
-          echo() {
-              printf '%b\n' "\$*"
-          }
-
-          run() {
-              echo "\${COLOR_PURPLE}==>\${COLOR_OFF} \${COLOR_GREEN}\$@\${COLOR_OFF}"
-              eval "\$*"
-          }
-
-          run uname -a
-
-          run apk update
-          run apk add wget g++ libc-dev linux-headers
-
-          run wget https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-          run chmod a+x ppkg
-          run ./ppkg setup
-          run ./ppkg update
-          run ./ppkg install bsdtar --static
-          run ./ppkg pack    bsdtar
-          EOF
-
-          chmod +x run.sh
-
-      # https://github.com/multiarch/qemu-user-static
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-      - run: docker run -v $PWD:$PWD -w $PWD --name alpine riscv64/alpine:edge sh run.sh
-
-      - run: ls
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bsdtar---linux-riscv64-tar-xz
-          path: bsdtar-*-linux-riscv64.tar.xz
-
-
-
-  linux-s390x:
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - run: |
-          cat > run.sh <<EOF
-          set -e
-
-          COLOR_GREEN='\033[0;32m'        # Green
-          COLOR_PURPLE='\033[0;35m'       # Purple
-          COLOR_OFF='\033[0m'             # Reset
-
-          echo() {
-              printf '%b\n' "\$*"
-          }
-
-          run() {
-              echo "\${COLOR_PURPLE}==>\${COLOR_OFF} \${COLOR_GREEN}\$@\${COLOR_OFF}"
-              eval "\$*"
-          }
-
-          run uname -a
-
-          run apk update
-          run apk add wget g++ libc-dev linux-headers
-
-          run wget https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-          run chmod a+x ppkg
-          run ./ppkg setup
-          run ./ppkg update
-          run ./ppkg install bsdtar --static
-          run ./ppkg pack    bsdtar
-          EOF
-
-          chmod +x run.sh
-
-      # https://github.com/multiarch/qemu-user-static
-      - run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-      - run: docker run -v $PWD:$PWD -w $PWD --name alpine s390x/alpine sh run.sh
-
-      - run: ls
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bsdtar---linux-s390x-tar-xz
-          path: bsdtar-*-linux-s390x.tar.xz
+          name: bsdtar---linux-${{ matrix.target-arch }}-tar-xz
+          path: bsdtar-*-linux-${{ matrix.target-arch }}.tar.xz
 
 
   android:
@@ -349,7 +198,7 @@ jobs:
 
 
   publish:
-    needs: [freebsd-amd64, openbsd-amd64, netbsd-amd64, macos, linux-x86_64, linux-aarch64, linux-ppc64le, linux-riscv64, linux-s390x, android]
+    needs: [freebsd-amd64, openbsd-amd64, netbsd-amd64, macos, linux, android]
 
     runs-on: ubuntu-latest
 
