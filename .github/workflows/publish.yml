@@ -4,114 +4,215 @@ on:
   workflow_dispatch:
 
 jobs:
-  netbsd-amd64:
+  dragonflybsd:
 
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        # https://ftp.netbsd.org/pub/NetBSD/
-        target-version: ['9.2', '9.3', '9.4', '10.0']
+        version: ['6.4']
+        profile: [debug, release]
 
     steps:
-      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-      - run: chmod a+x ppkg
-      - run: ./ppkg setup
-      - run: ./ppkg update
-      - run: ./ppkg install netbsd-${{ matrix.target-version }}-amd64/bsdtar --static
-      - run: ./ppkg pack    netbsd-${{ matrix.target-version }}-amd64/bsdtar
+      - uses: vmactions/dragonflybsd-vm@v1
+        with:
+          release: "${{ matrix.version }}.0"
+          usesh: true
+          sync: rsync
+          copyback: true
+          run: |
+            run() {
+              printf "\033[0;35m==>\033[0m \033[0;32m%b\n\033[0m" "$*"
+              eval "$@"
+            }
+
+            set -e
+
+            run pkg install -y curl libnghttp2 gcc
+
+            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+            run chmod a+x ppkg
+            run ./ppkg setup
+            run ./ppkg update
+            run ./ppkg install dragonflybsd-${{ matrix.version }}-x86_64/bsdtar --static --profile=${{ matrix.profile }}
+            run ./ppkg bundle  dragonflybsd-${{ matrix.version }}-x86_64/bsdtar .tar.xz
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---netbsd-${{ matrix.target-version }}-amd64-tar-xz
-          path: bsdtar-*-netbsd-${{ matrix.target-version }}-amd64.tar.xz
+          name: bsdtar---dragonflybsd-${{ matrix.version }}-x86_64-${{ matrix.profile }}.tar.xz
+          path: bsdtar-*-dragonflybsd-${{ matrix.version }}-x86_64.${{ matrix.profile }}.tar.xz
 
 
-  openbsd-amd64:
+
+  freebsd:
 
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        # https://cdn.openbsd.org/pub/OpenBSD/
-        target-version: ['7.5', '7.4', '7.3']
+        version: ['14.3', '14.2', '14.1', '14.0', '13.5', '13.4', '13.3', '13.2']
+        profile: [debug, release]
 
     steps:
-      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-      - run: chmod a+x ppkg
-      - run: ./ppkg setup
-      - run: ./ppkg update
-      - run: ./ppkg install openbsd-${{ matrix.target-version }}-amd64/bsdtar
-      - run: ./ppkg pack    openbsd-${{ matrix.target-version }}-amd64/bsdtar
+      - uses: actions/checkout@v4
+
+      - uses: cross-platform-actions/action@master
+        with:
+          operating_system: freebsd
+          version: ${{ matrix.version }}
+          shell: bash
+          run: |
+            run() {
+              printf "\033[0;35m==>\033[0m \033[0;32m%b\n\033[0m" "$*"
+              eval "$@"
+            }
+
+            run sudo pkg install -y curl
+
+            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+            run chmod a+x ppkg
+
+            run ./ppkg setup --syspm
+            run ./ppkg update
+            run ./ppkg install freebsd-${{ matrix.version }}-amd64/bsdtar --static --profile=${{ matrix.profile }}
+            run ./ppkg bundle  freebsd-${{ matrix.version }}-amd64/bsdtar .tar.xz
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---openbsd-${{ matrix.target-version }}-amd64-tar-xz
-          path: bsdtar-*-openbsd-${{ matrix.target-version }}-amd64.tar.xz
+          name: bsdtar---freebsd-${{ matrix.version }}-amd64-${{ matrix.profile }}.tar.xz
+          path: bsdtar-*-freebsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
 
-  freebsd-amd64:
+
+
+  openbsd:
 
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        # https://archive.freebsd.org/old-releases/amd64/
-        target-version: ['13.0', '13.1', '13.2', '13.3', '14.0', '14.1']
+        version: ['7.7', '7.6', '7.5', '7.4', '7.3', '7.2']
+        profile: [debug, release]
 
     steps:
-      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-      - run: chmod a+x ppkg
-      - run: ./ppkg setup
-      - run: ./ppkg update
-      - run: ./ppkg install freebsd-${{ matrix.target-version }}-amd64/bsdtar --static
-      - run: ./ppkg pack    freebsd-${{ matrix.target-version }}-amd64/bsdtar
+      - uses: actions/checkout@v4
+
+      - uses: cross-platform-actions/action@master
+        with:
+          operating_system: openbsd
+          version: ${{ matrix.version }}
+          shell: bash
+          run: |
+            run() {
+              printf "\033[0;35m==>\033[0m \033[0;32m%b\n\033[0m" "$*"
+              eval "$@"
+            }
+
+            run sudo pkg_add curl
+
+            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+            run chmod a+x ppkg
+
+            run ./ppkg setup --syspm
+            run ./ppkg update
+            run ./ppkg install openbsd-${{ matrix.version }}-amd64/bsdtar --profile=${{ matrix.profile }}
+            run ./ppkg bundle  openbsd-${{ matrix.version }}-amd64/bsdtar .tar.xz
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---freebsd-${{ matrix.target-version }}-amd64-tar-xz
-          path: bsdtar-*-freebsd-${{ matrix.target-version }}-amd64.tar.xz
+          name: bsdtar---openbsd-${{ matrix.version }}-amd64-${{ matrix.profile }}.tar.xz
+          path: bsdtar-*-openbsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
+
+
+
+  netbsd:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['10.1', '10.0', '9.4', '9.3', '9.2']
+        profile: [debug, release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cross-platform-actions/action@master
+        with:
+          operating_system: netbsd
+          version: ${{ matrix.version }}
+          shell: bash
+          run: |
+            run() {
+              printf "\033[0;35m==>\033[0m \033[0;32m%b\n\033[0m" "$*"
+              eval "$@"
+            }
+
+            run sudo pkgin -y install curl
+
+            run curl -LO -k https://curl.se/ca/cacert.pem
+
+            run export SSL_CERT_FILE="$PWD/cacert.pem"
+
+            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+            run chmod a+x ppkg
+
+            run ./ppkg setup --syspm
+            run ./ppkg update
+            run ./ppkg install netbsd-${{ matrix.version }}-amd64/bsdtar --static --profile=${{ matrix.profile }}
+            run ./ppkg bundle  netbsd-${{ matrix.version }}-amd64/bsdtar .tar.xz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bsdtar---netbsd-${{ matrix.version }}-amd64-${{ matrix.profile }}.tar.xz
+          path: bsdtar-*-netbsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
 
 
   macos:
 
-    runs-on: macos-14
+    runs-on: macos-15
 
     strategy:
       fail-fast: false
       matrix:
-        target-version: ['10.15', '11.0', '12.0', '13.0', '14.0']
+        target-version: ['10.15', '11.0', '12.0', '13.0', '14.0', '15.0']
         target-arch: [x86_64, arm64]
+        profile: [debug, release]
 
     steps:
-      - run: curl -LO https://raw.githubusercontent.com/leleliu008/xcpkg/master/xcpkg
-      - run: chmod a+x xcpkg
-      - run: ./xcpkg setup
-      - run: ./xcpkg update
-      - run: ./xcpkg install MacOSX-${{ matrix.target-version }}-${{ matrix.target-arch }}/bsdtar
-      - run: ./xcpkg pack    MacOSX-${{ matrix.target-version }}-${{ matrix.target-arch }}/bsdtar
+      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+      - run: chmod a+x ppkg
+
+      - run: ./ppkg setup
+      - run: ./ppkg update
+      - run: ./ppkg install macos-${{ matrix.target-version }}-${{ matrix.target-arch }}/bsdtar --profile=${{ matrix.profile }}
+      - run: ./ppkg bundle  macos-${{ matrix.target-version }}-${{ matrix.target-arch }}/bsdtar .tar.xz
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---macos${{ matrix.target-version }}-${{ matrix.target-arch }}-tar-xz
-          path: bsdtar-*-macos*.tar.xz
+          name: bsdtar-macos-${{ matrix.target-version }}-${{ matrix.target-arch }}.${{ matrix.profile }}.tar.xz
+          path: bsdtar-*.tar.xz
 
 
   linux:
+    needs: [check]
+    if: needs.check.outputs.if-has-new-commit == 'yes'
+
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        target-arch: [x86_64, aarch64, ppc64le, riscv64, s390x]
-
-    runs-on: ubuntu-latest
+        target-arch: [loongarch64, x86_64, aarch64, ppc64le, riscv64, s390x]
+        profile: [debug, release]
 
     steps:
       - run: |
           cat > run.sh <<EOF
-          set -e
+          set -ex
 
           COLOR_GREEN='\033[0;32m'        # Green
           COLOR_PURPLE='\033[0;35m'       # Purple
@@ -126,46 +227,36 @@ jobs:
               eval "\$*"
           }
 
-          run uname -a
+          ########################################################################
 
-          run apk update
-          run apk add wget g++ libc-dev linux-headers
+          run uname -a
+          run id
+          run pwd
+
+          export GITHUB_ACTIONS=true
+
+          ########################################################################
 
           run wget https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
           run chmod a+x ppkg
           run ./ppkg setup
           run ./ppkg update
-          run ./ppkg install bsdtar --static
-          run ./ppkg pack    bsdtar
+          run ./ppkg install bsdtar --static --profile=${{ matrix.profile }}
+          run ./ppkg bundle  bsdtar .tar.xz
           EOF
 
-          chmod +x run.sh
-
-      # https://github.com/multiarch/qemu-user-static
-      - if: matrix.target-arch != 'x86_64'
-        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
-      - if: matrix.target-arch == 'x86_64'
-        run: docker run -v $PWD:/root -w /root --name alpine         alpine sh run.sh
-
-      - if: matrix.target-arch == 'aarch64'
-        run: docker run -v $PWD:/root -w /root --name alpine arm64v8/alpine sh run.sh
-
-      - if: matrix.target-arch == 'ppc64le'
-        run: docker run -v $PWD:/root -w /root --name alpine ppc64le/alpine sh run.sh
-
-      - if: matrix.target-arch == 'riscv64'
-        run: docker run -v $PWD:/root -w /root --name alpine riscv64/alpine sh run.sh
-
-      - if: matrix.target-arch == 's390x'
-        run: docker run -v $PWD:/root -w /root --name alpine   s390x/alpine sh run.sh
+      - run: curl -LO https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/master/alpine-chroot-install
+      - run: chmod +x alpine-chroot-install
+      - run: sudo ./alpine-chroot-install -d /alpine -a ${{ matrix.target-arch }} -p wget -p g++
+      - run: /alpine/enter-chroot sh run.sh
+      - run: /alpine/destroy
 
       - run: ls
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---linux-${{ matrix.target-arch }}-tar-xz
-          path: bsdtar-*-linux-${{ matrix.target-arch }}.tar.xz
+          name: bsdtar---linux-${{ matrix.target-arch }}.${{ matrix.profile }}.tar.xz
+          path: bsdtar-*-linux-${{ matrix.target-arch }}.${{ matrix.profile }}.tar.xz
 
 
   android:
@@ -184,12 +275,12 @@ jobs:
       - run: ./ndk-pkg about
       - run: ./ndk-pkg setup
       - run: ./ndk-pkg update
-      - run: ./ndk-pkg install android-34-arm64-v8a,armeabi-v7a,x86_64,x86/bsdtar --static
+      - run: ./ndk-pkg install android-35-arm64-v8a,armeabi-v7a,x86_64,x86/bsdtar --static
 
-      - run: ./ndk-pkg pack    android-34-arm64-v8a/bsdtar
-      - run: ./ndk-pkg pack    android-34-armeabi-v7a/bsdtar
-      - run: ./ndk-pkg pack    android-34-x86_64/bsdtar
-      - run: ./ndk-pkg pack    android-34-x86/bsdtar
+      - run: ./ndk-pkg bundle  android-35-arm64-v8a/bsdtar   .tar.xz
+      - run: ./ndk-pkg bundle  android-35-armeabi-v7a/bsdtar .tar.xz
+      - run: ./ndk-pkg bundle  android-35-x86_64/bsdtar      .tar.xz
+      - run: ./ndk-pkg bundle  android-35-x86/bsdtar         .tar.xz
 
       - uses: actions/upload-artifact@v4
         with:
@@ -198,7 +289,7 @@ jobs:
 
 
   publish:
-    needs: [freebsd-amd64, openbsd-amd64, netbsd-amd64, macos, linux, android]
+    needs: [freebsd, openbsd, netbsd, macos, linux, android]
 
     runs-on: ubuntu-latest
 
@@ -234,6 +325,4 @@ jobs:
 
           TAGNAME="$(date +%Y.%m.%d)"
 
-          printf 'sha256sum:\n```\n%s\n```\n' "$(sha256sum bsdtar-*.exe)" > notes.md
-
-          gh release create "$TAGNAME" bsdtar-*.exe --title "$TAGNAME" --notes-file notes.md
+          gh release create "$TAGNAME" bsdtar-*.exe --title "$TAGNAME"
