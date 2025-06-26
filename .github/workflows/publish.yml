@@ -40,7 +40,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---dragonflybsd-${{ matrix.version }}-x86_64-${{ matrix.profile }}.tar.xz
+          name: bsdtar---dragonflybsd-${{ matrix.version }}-x86_64.${{ matrix.profile }}.tar.xz
           path: bsdtar-*-dragonflybsd-${{ matrix.version }}-x86_64.${{ matrix.profile }}.tar.xz
 
 
@@ -81,7 +81,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---freebsd-${{ matrix.version }}-amd64-${{ matrix.profile }}.tar.xz
+          name: bsdtar---freebsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
           path: bsdtar-*-freebsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
 
 
@@ -122,7 +122,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---openbsd-${{ matrix.version }}-amd64-${{ matrix.profile }}.tar.xz
+          name: bsdtar---openbsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
           path: bsdtar-*-openbsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
 
 
@@ -167,7 +167,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: bsdtar---netbsd-${{ matrix.version }}-amd64-${{ matrix.profile }}.tar.xz
+          name: bsdtar---netbsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
           path: bsdtar-*-netbsd-${{ matrix.version }}-amd64.${{ matrix.profile }}.tar.xz
 
 
