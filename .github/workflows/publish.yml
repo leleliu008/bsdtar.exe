@@ -198,8 +198,6 @@ jobs:
 
 
   linux:
-    needs: [check]
-    if: needs.check.outputs.if-has-new-commit == 'yes'
 
     runs-on: ubuntu-latest
 
