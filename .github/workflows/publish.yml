@@ -15,6 +15,9 @@ jobs:
         profile: [debug, release]
 
     steps:
+      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+      - run: chmod a+x ppkg
+
       - uses: vmactions/dragonflybsd-vm@v1
         with:
           release: "${{ matrix.version }}.0"
@@ -29,10 +32,8 @@ jobs:
 
             set -e
 
-            run pkg install -y curl libnghttp2 gcc
+            export GITHUB_ACTIONS=true
 
-            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-            run chmod a+x ppkg
             run ./ppkg setup
             run ./ppkg update
             run ./ppkg install dragonflybsd-${{ matrix.version }}-x86_64/bsdtar --static --profile=${{ matrix.profile }}
@@ -56,7 +57,8 @@ jobs:
         profile: [debug, release]
 
     steps:
-      - uses: actions/checkout@v4
+      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+      - run: chmod a+x ppkg
 
       - uses: cross-platform-actions/action@master
         with:
@@ -69,10 +71,7 @@ jobs:
               eval "$@"
             }
 
-            run sudo pkg install -y curl
-
-            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-            run chmod a+x ppkg
+            export GITHUB_ACTIONS=true
 
             run ./ppkg setup --syspm
             run ./ppkg update
@@ -97,7 +96,8 @@ jobs:
         profile: [debug, release]
 
     steps:
-      - uses: actions/checkout@v4
+      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+      - run: chmod a+x ppkg
 
       - uses: cross-platform-actions/action@master
         with:
@@ -110,10 +110,7 @@ jobs:
               eval "$@"
             }
 
-            run sudo pkg_add curl
-
-            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-            run chmod a+x ppkg
+            export GITHUB_ACTIONS=true
 
             run ./ppkg setup --syspm
             run ./ppkg update
@@ -138,7 +135,9 @@ jobs:
         profile: [debug, release]
 
     steps:
-      - uses: actions/checkout@v4
+      - run: curl -LO https://curl.se/ca/cacert.pem
+      - run: curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+      - run: chmod a+x ppkg
 
       - uses: cross-platform-actions/action@master
         with:
@@ -151,14 +150,8 @@ jobs:
               eval "$@"
             }
 
-            run sudo pkgin -y install curl
-
-            run curl -LO -k https://curl.se/ca/cacert.pem
-
-            run export SSL_CERT_FILE="$PWD/cacert.pem"
-
-            run curl -LO https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-            run chmod a+x ppkg
+            export GITHUB_ACTIONS=true
+            export SSL_CERT_FILE="$PWD/cacert.pem"
 
             run ./ppkg setup --syspm
             run ./ppkg update
@@ -235,17 +228,18 @@ jobs:
 
           ########################################################################
 
-          run wget https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
-          run chmod a+x ppkg
-          run ./ppkg setup
+          run ./ppkg setup --syspm
           run ./ppkg update
           run ./ppkg install bsdtar --static --profile=${{ matrix.profile }}
           run ./ppkg bundle  bsdtar .tar.xz
           EOF
 
+      - run: wget https://raw.githubusercontent.com/leleliu008/ppkg/master/ppkg
+      - run: chmod a+x ppkg
+
       - run: curl -LO https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/master/alpine-chroot-install
       - run: chmod +x alpine-chroot-install
-      - run: sudo ./alpine-chroot-install -d /alpine -a ${{ matrix.target-arch }} -p wget -p g++ -p linux-headers
+      - run: sudo ./alpine-chroot-install -d /alpine -a ${{ matrix.target-arch }}
       - run: /alpine/enter-chroot sh run.sh
       - run: /alpine/destroy
 
