@@ -204,7 +204,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target-arch: [loongarch64, x86_64, aarch64, ppc64le, riscv64, s390x]
+        target-arch: [loongarch64, x86_64, aarch64, ppc64le, riscv64, s390x, armhf]
         profile: [debug, release]
 
     steps:
@@ -254,7 +254,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: bsdtar---linux-${{ matrix.target-arch }}.${{ matrix.profile }}.tar.xz
-          path: bsdtar-*-linux-${{ matrix.target-arch }}.${{ matrix.profile }}.tar.xz
+          path: bsdtar-*-linux-*.${{ matrix.profile }}.tar.xz
 
 
   android:
